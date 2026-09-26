@@ -13,4 +13,4 @@ python camera.py
 - CPU使用率：15.8%
 - 内存占用：0.3%
 ## htop监控截图
-![htop_camera](file:///home/cai/%E4%B8%8B%E8%BD%BD/htop_camera.png)
+![htop_camera](./htop_camera.png)
