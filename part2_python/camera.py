@@ -24,7 +24,7 @@ frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter("output_video.mp4", fourcc, fps, (frame_width, frame_height))
+out = cv2.VideoWriter("raw_capture.mp4", fourcc, fps, (frame_width, frame_height))
 
 
 while True:
@@ -60,4 +60,5 @@ while True:
 cap.release()
 out.release()
 cv2.destroyAllWindows()
-print("程序结束，原始视频已保存至 output_video.mp4")
+print("程序结束，原始视频已保存至 raw_capture.mp4")
+
