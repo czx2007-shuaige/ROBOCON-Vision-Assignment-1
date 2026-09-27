@@ -69,12 +69,17 @@ find_package(OpenCV REQUIRED)
 
 add_executable(video_process src/main.cpp src/transform.cpp)
 target_link_libraries(video_process ${OpenCV_LIBS})
-
+```
 ## 2. cmake configure 命令（配置）
+```
 cmake -S . -B build
+```
 ## 3. cmake build 命令（编译构建）
+```
 cmake --build build
+```
 ## 4. 可执行文件运行命令
+```
 ./build/video_process ../part2_python/raw_capture.mp4 output_cmake.mp4
 ```
 ## 5.运行结果
