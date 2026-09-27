@@ -1,2 +1,0 @@
-[console_scripts]
-robocon-video-b = analyze_video:main

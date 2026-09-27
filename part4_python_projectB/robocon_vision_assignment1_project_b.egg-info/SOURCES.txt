@@ -1,8 +1,0 @@
-analyze_video.py
-pyproject.toml
-robocon_vision_assignment1_project_b.egg-info/PKG-INFO
-robocon_vision_assignment1_project_b.egg-info/SOURCES.txt
-robocon_vision_assignment1_project_b.egg-info/dependency_links.txt
-robocon_vision_assignment1_project_b.egg-info/entry_points.txt
-robocon_vision_assignment1_project_b.egg-info/requires.txt
-robocon_vision_assignment1_project_b.egg-info/top_level.txt
