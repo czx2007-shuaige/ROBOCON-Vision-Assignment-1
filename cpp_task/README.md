@@ -50,3 +50,37 @@ main.cpp里面调用了在`transform.cpp`中实现的函数。
 ### 4. 编译成功后产生的文件是什么？
 由命令最后的 `-o video_process` 指定，编译链接完成生成可执行程序：`video_process`。
 这是二进制可执行文件，使用 `./video_process` 就可以运行。
+
+
+# Part6 — CMake构建项目
+> 在手工g++编译成功之后，使用CMake完成本视频处理项目的构建
+
+## 1. CMakeLists.txt 的完整内容
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(video_process)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include_directories(include)
+include_directories(/usr/include/eigen3)
+
+find_package(OpenCV REQUIRED)
+
+add_executable(video_process src/main.cpp src/transform.cpp)
+target_link_libraries(video_process ${OpenCV_LIBS})
+
+## 2. cmake configure 命令（配置）
+cmake -S . -B build
+## 3. cmake build 命令（编译构建）
+cmake --build build
+## 4. 可执行文件运行命令
+./build/video_process ../part2_python/raw_capture.mp4 output_cmake.mp4
+```
+## 5.运行结果
+执行程序后读取Part2录制的raw_capture.mp4原始视频，将视频转为灰度画面，处理完成终端输出 Video finished!，成功生成输出视频文件 output_cmake.mp4。
+
+
+思考题：手工 g++ 命令和 CMake 的关系是什么？
+
+CMake是构建系统生成工具，本身并不会直接编译代码；CMake读取CMakeLists.txt配置自动生成编译规则，底层最终调用g++编译器完成编译链接。手写g++是直接手动调用编译器，适合小型简单项目；CMake用来自动化管理项目头文件、第三方库依赖，适合规模更大的工程。
