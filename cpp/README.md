@@ -25,10 +25,10 @@ g++ src/main.cpp src/transform.cpp -Iinclude -I/usr/include/eigen3 `pkg-config -
 ## 实验截图
 
 ### 1. 编译成功截图
-![编译成功截图](../assets/part5_compile.png)
+![编译成功截图](../assets/cpp/part5_compile.png)
 
 ### 2. 程序运行完成截图
-![运行成功截图](../assets/part5_run.png)
+![运行成功截图](../assets/cpp/part5_run.png)
 
 ## 编译命令相关说明
 
