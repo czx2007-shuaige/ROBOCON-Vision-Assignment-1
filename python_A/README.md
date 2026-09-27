@@ -14,4 +14,4 @@
 4. 窗口3：Canny轮廓提取图像
 5. 程序运行至少30秒，按下q退出
 6. 退出自动保存原始视频 raw_capture.mp4
-![摄像头画面截图](../assets/python_a/camera_cap.png)
+![摄像头画面截图](../assets/python_a/截图 2026-09-26 19-16-29.png)
