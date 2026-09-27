@@ -86,6 +86,6 @@ cmake --build build
 执行程序后读取Part2录制的raw_capture.mp4原始视频，将视频转为灰度画面，处理完成终端输出 Video finished!，成功生成输出视频文件 output_cmake.mp4。
 
 
-##思考题：手工 g++ 命令和 CMake 的关系是什么？
+## 思考题：手工 g++ 命令和 CMake 的关系是什么？
 
 CMake是构建系统生成工具，本身并不会直接编译代码；CMake读取CMakeLists.txt配置自动生成编译规则，底层最终调用g++编译器完成编译链接。手写g++是直接手动调用编译器，适合小型简单项目；CMake用来自动化管理项目头文件、第三方库依赖，适合规模更大的工程。
