@@ -1,4 +1,7 @@
 # Part III — 进程观察实验
+## htop监控截图
+![htop进程监控截图](../assets/htop-monitor.png)
+
 ## 实验目的
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
 
@@ -12,5 +15,4 @@ python camera.py
 - PPID：8563
 - CPU使用率：15.8%
 - 内存占用：0.3%
-## htop监控截图
-![htop_camera](../assets/htop_camera.png)
+
