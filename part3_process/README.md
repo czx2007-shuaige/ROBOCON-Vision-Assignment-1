@@ -1,6 +1,6 @@
 # Part III — 进程观察实验
 ## htop监控截图
-![htop进程监控截图](../assets/htop-monitor.png)
+![htop进程监控截图](../assets/process/htop-monitor.png)
 
 ## 实验目的
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
