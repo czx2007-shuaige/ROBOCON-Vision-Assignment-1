@@ -1,6 +1,7 @@
 # Assignment 1
 
 ## 1. System Information
+```
 =====1.系统发行版=====
 PRETTY_NAME="Ubuntu 24.04.4 LTS"
 NAME="Ubuntu"
@@ -101,7 +102,7 @@ wayland-0
 # nvcc --version
 执行输出：Command 'nvcc' not found
 说明：尚未安装CUDA工具链，由于显卡无法识别，暂时无法正常使用CUDA。
-
+```
 ## 2. Python Project A
 # Project A 摄像头+进程观察
 ## 环境创建、激活、安装依赖、运行命令
@@ -124,7 +125,7 @@ wayland-0
 
 ## 3.Process Observation
 ## htop监控截图
-![htop进程监控截图](../assets/process/htop-monitor.png)
+![htop进程监控截图](../assets/htop-monitor.png)
 
 ## 实验目的
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
@@ -178,8 +179,8 @@ python analyze_video.py ../part2_python/raw_capture.mp4
 如果强行在一个环境里安装，升级或者降级Python之后，必然会破坏其中一个项目的依赖版本，导致另一个项目无法正常运行；
 因此必须创建两套独立Conda隔离环境，各自匹配对应的Python与依赖包，互不干扰。
 
-![ProjectB终端运行截图](../assets/python_b/projectB-terminal.png)
-![视频处理输出结果](../assets/python_b/projectB-output.png)
+![ProjectB终端运行截图](../assets/projectB-terminal.png)
+![视频处理输出结果](../assets/projectB-output.png)
 ## 5. C++ Manual Build
 ## 实验目的
 使用g++直接手写编译命令，完成多文件C++项目编译，读取视频，将画面转为灰度图并输出新视频。
@@ -206,10 +207,10 @@ g++ src/main.cpp src/transform.cpp -Iinclude -I/usr/include/eigen3 `pkg-config -
 ## 实验截图
 
 ### 1. 编译成功截图
-![编译成功截图](../assets/cpp/part5_compile.png)
+![编译成功截图](../assets/part5_compile.png)
 
 ### 2. 程序运行完成截图
-![运行成功截图](../assets/cpp/part5_run.png)
+![运行成功截图](../assets/part5_run.png)
 
 ## 编译命令相关说明
 
