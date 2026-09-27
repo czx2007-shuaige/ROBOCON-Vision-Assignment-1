@@ -38,5 +38,5 @@ python analyze_video.py ../part2_python/raw_capture.mp4
 如果强行在一个环境里安装，升级或者降级Python之后，必然会破坏其中一个项目的依赖版本，导致另一个项目无法正常运行；
 因此必须创建两套独立Conda隔离环境，各自匹配对应的Python与依赖包，互不干扰。
 
-![ProjectB终端运行截图](../assets/projectB-terminal.png)
-![视频处理输出结果](../assets/projectB-output.png)
+![ProjectB终端运行截图](../assets/process/projectB-terminal.png)
+![视频处理输出结果](../assets/process/projectB-output.png)
