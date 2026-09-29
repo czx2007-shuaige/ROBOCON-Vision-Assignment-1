@@ -107,20 +107,32 @@ wayland-0
 # Project A 摄像头+进程观察
 ## 环境创建、激活、安装依赖、运行命令
 ```
-1. conda create -n vision python=3.10
-2. conda activate vision
-3. python --version
-4. which python
-5. pip install numpy opencv-python
-6. python camera.py
+创建满足 `Python >=3.9, <3.11` 约束的 conda 环境 `projA`，本实验选用 Python 3.10:
+conda create -n projA python=3.10 -y
+conda activate projA
+python --vision
+which python
+pip install "numpy>=1.26,<2.0" "opencv-python>=4.9,<5.0"
 ```
-## 功能说明
-1. 读取摄像头实时画面
-2. 窗口1：原始彩色图像
-3. 窗口2：灰度图像
-4. 窗口3：Canny轮廓提取图像
-5. 程序运行至少30秒，按下q退出
-6. 退出自动保存原始视频 raw_capture.mp4
+安装的包版本:
+- numpy: 1.26.4
+- opencv-python: 4.11.0.86
+
+###  运行摄像头采集程序
+```bash
+python camera.py
+```
+程序启动后会同时弹出3个 OpenCV 窗口：
+1. Project A - Original（摄像头原始画面）
+2. Project A - Grayscale（灰度转换后的图像）
+3. Project A - Contours（轮廓检测结果）
+
+程序持续采集视频，运行时长不少于30秒。
+在图像窗口内按下 `q` 键退出程序。
+输出文件：**raw_capture.mp4**（未经处理的原始摄像头视频）
+
+> 证据截图：三个 OpenCV 窗口同时显示的截图。
+
 ![摄像头画面截图](../assets/camera_cap.png)
 
 ## 3.Process Observation
@@ -131,15 +143,21 @@ wayland-0
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
 
 ## 实验步骤
-1. 打开终端A，进入 part2_python 目录，执行
+保持 `camera.py` 处于运行状态，新开一个终端进行进程监控。
+
+1. 查找 camera.py 对应的进程 PID
 ```bash
-cd part2_python
-python camera.py
-## 实验采集数据
-- PID：13506
-- PPID：8563
-- CPU使用率：15.8%
-- 内存占用：0.3%
+pgrep -f camera.py
+```
+2. 查看进程信息，包含 PID、PPID、启动命令、CPU占用、内存占用以及运行时间
+```bash
+ps -o pid,ppid,cmd,%cpu,%mem,etime -p <你的实际PID>
+```
+3. 使用 `htop` 可视化查看资源占用
+进入 htop 设置界面（按 F2）→ Columns → 添加 PPID 列，找到本次运行的 python 摄像头进程。
+
+> 证据截图：`ps` 命令输出截图、显示PPID列的 htop 界面截图。
+![htop]()
 ## 4. Python Project B
 ## 实验目标
 Project B 会读取 Project A 保存的原始视频，并进行进一步离线处理，最后输出另一个 MP4。
