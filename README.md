@@ -137,9 +137,6 @@ python camera.py
 ![摄像头画面截图](./assets/python_a/camera_cap.png)
 
 ## 3.Process Observation
-## htop监控截图
-![htop进程监控截图](./assets/process/htop-monitor.png)
-
 ## 实验目的
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
 
@@ -158,7 +155,7 @@ ps -o pid,ppid,cmd,%cpu,%mem,etime -p <你的实际PID>
 进入 htop 设置界面（按 F2）→ Columns → 添加 PPID 列，找到本次运行的 python 摄像头进程。
 
 > 证据截图：`ps` 命令输出截图、显示PPID列的 htop 界面截图。
-![htop]()
+![htop](./assets/process/htop-monitor.png)
 ## 4. Python Project B
 ## 实验目标
 Project B 会读取 Project A 保存的原始视频，并进行进一步离线处理，最后输出另一个 MP4。
