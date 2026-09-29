@@ -106,8 +106,9 @@ wayland-0
 ## 2. Python Project A
 # Project A 摄像头+进程观察
 ## 环境创建、激活、安装依赖、运行命令
-```
+
 创建满足 `Python >=3.9, <3.11` 约束的 conda 环境 `projA`，本实验选用 Python 3.10:
+```
 conda create -n projA python=3.10 -y
 conda activate projA
 python --vision
@@ -133,11 +134,11 @@ python camera.py
 
 > 证据截图：三个 OpenCV 窗口同时显示的截图。
 
-![摄像头画面截图](../assets/camera_cap.png)
+![摄像头画面截图](./assets/camera_cap.png)
 
 ## 3.Process Observation
 ## htop监控截图
-![htop进程监控截图](../assets/htop-monitor.png)
+![htop进程监控截图](./assets/htop-monitor.png)
 
 ## 实验目的
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
