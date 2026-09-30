@@ -153,6 +153,19 @@ ps -o pid,ppid,cmd,%cpu,%mem,etime -p <你的实际PID>
 ```
 3. 使用 `htop` 可视化查看资源占用
 进入 htop 设置界面（按 F2）→ Columns → 添加 PPID 列，找到本次运行的 python 摄像头进程。
+ ## 实验数据
+ 
+• PID：10190
+
+• PPID：8356
+
+• CMD：python camera.py
+
+• CPU%：158
+
+• MEM%：0.3
+
+• 已运行时间(elapsed time)：03:20
 
 > 证据截图：`ps` 命令输出截图、显示PPID列的 htop 界面截图。
 ![htop](./assets/process/htop-monitor.png)
