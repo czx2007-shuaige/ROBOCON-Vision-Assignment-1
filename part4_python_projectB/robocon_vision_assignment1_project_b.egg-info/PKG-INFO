@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: robocon-vision-assignment1-project-b
-Version: 1.0.0
-Summary: ROBOCON Vision Assignment 1 – offline video analysis
-Requires-Python: <3.14,>=3.12
-Requires-Dist: numpy<3.0,>=2.0
-Requires-Dist: imageio<3.0,>=2.36
-Requires-Dist: imageio-ffmpeg<1.0,>=0.5
-Requires-Dist: scikit-image<0.27,>=0.24
