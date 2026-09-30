@@ -1,0 +1,4 @@
+numpy<3.0,>=2.0
+imageio<3.0,>=2.36
+imageio-ffmpeg<1.0,>=0.5
+scikit-image<0.27,>=0.24
