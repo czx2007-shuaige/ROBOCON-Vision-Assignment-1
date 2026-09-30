@@ -1,5 +1,4 @@
-# Part5 — C++ g++手动编译OpenCV视频处理
-
+## 5. C++ Manual Build
 ## 实验目的
 使用g++直接手写编译命令，完成多文件C++项目编译，读取视频，将画面转为灰度图并输出新视频。
 
@@ -13,22 +12,18 @@ cpp_task
 │   └── transform.cpp
 └── README.md
 
-## 完整编译命令
+### 终端操作命令
 ```bash
-g++ src/main.cpp src/transform.cpp -Iinclude -I/usr/include/eigen3 `pkg-config --cflags --libs opencv4` -o video_process
+# 进入cpp项目目录
+cd cpp
 
-## 运行程序
-```bash
-./video_process ../part2_python/raw_capture.mp4 output.mp4
+# 单条完整g++编译指令
+g++ -std=c++17 -I./include -I/usr/include/eigen3 src/transform.cpp src/main.cpp -o video_prog $(pkg-config --cflags --libs opencv4)
+
+# 执行程序，使用ProjectA输出视频作为输入
+./video_prog ../python_A/raw_capture.mp4 cpp_processed.mp4
 ```
 
-## 实验截图
-
-### 1. 编译成功截图
-![编译成功截图](../assets/cpp/part5_compile.png)
-
-### 2. 程序运行完成截图
-![运行成功截图](../assets/cpp/part5_run.png)
 
 ## 编译命令相关说明
 
@@ -51,36 +46,34 @@ main.cpp里面调用了在`transform.cpp`中实现的函数。
 由命令最后的 `-o video_process` 指定，编译链接完成生成可执行程序：`video_process`。
 这是二进制可执行文件，使用 `./video_process` 就可以运行。
 
-
-# Part6 — CMake构建项目
+## 6. CMake Build
 > 在手工g++编译成功之后，使用CMake完成本视频处理项目的构建
 
 ## 1. CMakeLists.txt 的完整内容
-```cmake
-cmake_minimum_required(VERSION 3.10)
-project(video_process)
+```
+cmake_minimum_required(VERSION 3.16)
+project(cpp_video_process)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include_directories(include)
-include_directories(/usr/include/eigen3)
 
 find_package(OpenCV REQUIRED)
+find_package(Eigen3 REQUIRED)
 
-add_executable(video_process src/main.cpp src/transform.cpp)
-target_link_libraries(video_process ${OpenCV_LIBS})
-```
-## 2. cmake configure 命令（配置）
-```
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    ${EIGEN3_INCLUDE_DIR}
+)
+
+add_executable(video_app src/main.cpp src/transform.cpp)
+target_link_libraries(video_app ${OpenCV_LIBS})
+
+# 2. cmake configure 配置命令（题目指定）
 cmake -S . -B build
-```
-## 3. cmake build 命令（编译构建）
-```
+
+# 3. cmake build 编译命令（题目指定）
 cmake --build build
-```
-## 4. 可执行文件运行命令
-```
-./build/video_process ../part2_python/raw_capture.mp4 output_cmake.mp4
+
+# 4. 可执行文件运行命令，从build文件夹内部启动程序
+./build/video_app ../../python_A/raw_capture.mp4 cpp_output.mp4
 ```
 ## 5.运行结果
 执行程序后读取Part2录制的raw_capture.mp4原始视频，将视频转为灰度画面，处理完成终端输出 Video finished!，成功生成输出视频文件 output_cmake.mp4。
