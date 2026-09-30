@@ -178,11 +178,9 @@ Project A 与 Project B 在元数据中声明了不兼容的 Python 版本范围
 ## 操作命令记录
 ```bash
 # 1. 创建Project B环境
-conda create -n vision-b python=3.13
-
+conda create -n proj_b python=3.12 -y
 # 2. 激活Project B环境
-conda activate vision-b
-
+conda activate proj_b
 # 3. 查看当前Python版本
 python --version
 
@@ -193,14 +191,14 @@ which python
 pip install .
 
 # 6. 运行视频处理程序，读取part2目录的原始视频
-python analyze_video.py ../part2_python/raw_capture.mp4 
+python analyze_video.py --input ../python_A/raw_capture.mp4 --output advanced_analysis.mp4
 ```
 
 ## 环境信息说明
-1. Project A 使用的 Conda 环境：vision
+1. Project A 使用的 Conda 环境：projA
 2. Project A Python 版本：3.10
-3. Project B 使用的 Conda 环境：vision-b
-4. Project B Python 版本：3.13
+3. Project B 使用的 Conda 环境：proj_b
+4. Project B Python 版本：3.12
 
 5. 为什么不能直接把两个项目当成同一个环境来完成？
 两个项目在 pyproject.toml 中声明了互相冲突、不兼容的Python版本约束范围。
@@ -208,38 +206,23 @@ python analyze_video.py ../part2_python/raw_capture.mp4
 如果强行在一个环境里安装，升级或者降级Python之后，必然会破坏其中一个项目的依赖版本，导致另一个项目无法正常运行；
 因此必须创建两套独立Conda隔离环境，各自匹配对应的Python与依赖包，互不干扰。
 
-![ProjectB终端运行截图](../assets/projectB-terminal.png)
-![视频处理输出结果](../assets/projectB-output.png)
 ## 5. C++ Manual Build
 ## 实验目的
 使用g++直接手写编译命令，完成多文件C++项目编译，读取视频，将画面转为灰度图并输出新视频。
 
 ## 项目目录结构
-```
-cpp_task
-├── include
-│   └── transform.hpp
-├── src
-│   ├── main.cpp
-│   └── transform.cpp
-└── README.md
-
 ## 完整编译命令
+### 终端操作命令
 ```bash
-g++ src/main.cpp src/transform.cpp -Iinclude -I/usr/include/eigen3 `pkg-config --cflags --libs opencv4` -o video_process
+# 进入cpp项目目录
+cd cpp
 
-## 运行程序
-```bash
-./video_process ../part2_python/raw_capture.mp4 output.mp4
+# 单条完整g++编译指令
+g++ -std=c++17 -I./include -I/usr/include/eigen3 src/transform.cpp src/main.cpp -o video_prog $(pkg-config --cflags --libs opencv4)
+
+# 执行程序，使用ProjectA输出视频作为输入
+./video_prog ../python_A/raw_capture.mp4 cpp_processed.mp4
 ```
-
-## 实验截图
-
-### 1. 编译成功截图
-![编译成功截图](../assets/part5_compile.png)
-
-### 2. 程序运行完成截图
-![运行成功截图](../assets/part5_run.png)
 
 ## 编译命令相关说明
 
@@ -266,19 +249,21 @@ main.cpp里面调用了在`transform.cpp`中实现的函数。
 > 在手工g++编译成功之后，使用CMake完成本视频处理项目的构建
 
 ## 1. CMakeLists.txt 的完整内容
-```cmake
-cmake_minimum_required(VERSION 3.10)
-project(video_process)
+```
+cmake_minimum_required(VERSION 3.16)
+project(cpp_video_process)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include_directories(include)
-include_directories(/usr/include/eigen3)
 
 find_package(OpenCV REQUIRED)
+find_package(Eigen3 REQUIRED)
 
-add_executable(video_process src/main.cpp src/transform.cpp)
-target_link_libraries(video_process ${OpenCV_LIBS})
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    ${EIGEN3_INCLUDE_DIR}
+)
+
+add_executable(video_app src/main.cpp src/transform.cpp)
+target_link_libraries(video_app ${OpenCV_LIBS})
 ```
 ## 2. cmake configure 命令（配置）
 ```
@@ -290,8 +275,7 @@ cmake --build build
 ```
 ## 4. 可执行文件运行命令
 ```
-./build/video_process ../part2_python/raw_capture.mp4 output_cmake.mp4
-```
+./build/video_app ../../python_A/raw_capture.mp4 cpp_output.mp4```
 ## 5.运行结果
 执行程序后读取Part2录制的raw_capture.mp4原始视频，将视频转为灰度画面，处理完成终端输出 Video finished!，成功生成输出视频文件 output_cmake.mp4。
 
