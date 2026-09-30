@@ -136,6 +136,9 @@ python camera.py
 
 ![摄像头画面截图](./assets/python_a/camera_cap.png)
 
+## 视频路径
+/home/cai/ROBOCON-Vision-Assignment-1/python_A/raw_capture.mp4
+
 ## 3.Process Observation
 ## 实验目的
 在Project A（camera.py摄像头程序）运行时，使用 ps、htop 工具观测进程，获取进程PID、PPID、CPU、内存占用等信息，理解操作系统进程相关概念。
@@ -190,7 +193,7 @@ which python
 # 5. 根据pyproject.toml自动安装全部依赖包
 pip install .
 
-# 6. 运行视频处理程序，读取part2目录的原始视频
+# 6. 运行视频处理程序
 python analyze_video.py --input ../python_A/raw_capture.mp4 --output advanced_analysis.mp4
 ```
 
@@ -206,6 +209,8 @@ python analyze_video.py --input ../python_A/raw_capture.mp4 --output advanced_an
 如果强行在一个环境里安装，升级或者降级Python之后，必然会破坏其中一个项目的依赖版本，导致另一个项目无法正常运行；
 因此必须创建两套独立Conda隔离环境，各自匹配对应的Python与依赖包，互不干扰。
 
+## 视频路径
+/home/cai/ROBOCON-Vision-Assignment-1/python_B/advanced_analysis.mp4
 ## 5. C++ Manual Build
 ## 实验目的
 使用g++直接手写编译命令，完成多文件C++项目编译，读取视频，将画面转为灰度图并输出新视频。
@@ -223,7 +228,8 @@ g++ -std=c++17 -I./include -I/usr/include/eigen3 src/transform.cpp src/main.cpp 
 # 执行程序，使用ProjectA输出视频作为输入
 ./video_prog ../python_A/raw_capture.mp4 cpp_processed.mp4
 ```
-
+# 视频路径
+/home/cai/ROBOCON-Vision-Assignment-1/cpp/cpp_processed.mp4
 ## 编译命令相关说明
 
 ### 1. `-I` 的作用是什么？
@@ -277,8 +283,10 @@ cmake --build build
 ```
 ./build/video_app ../../python_A/raw_capture.mp4 cpp_output.mp4```
 ## 5.运行结果
-执行程序后读取Part2录制的raw_capture.mp4原始视频，将视频转为灰度画面，处理完成终端输出 Video finished!，成功生成输出视频文件 output_cmake.mp4。
+执行程序后读取Python_A录制的raw_capture.mp4原始视频，将视频转为灰度画面，处理完成终端输出 Video finished!，成功生成输出视频文件 cpp_output.mp4。
 
+## 视频路径
+/home/cai/ROBOCON-Vision-Assignment-1/cpp/buil/cpp_output.mp4
 
 ## 思考题：手工 g++ 命令和 CMake 的关系是什么？
 
