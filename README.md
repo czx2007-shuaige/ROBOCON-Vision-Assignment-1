@@ -91,18 +91,9 @@ wayland
 =====8.WAYLAND_DISPLAY=====
 wayland-0
 
-=====9. NVIDIA与CUDA环境检查=====
-# nvidia-smi
-执行输出：No devices were found
-现象说明：
-本机硬件搭载NVIDIA独立显卡，但Ubuntu系统无法识别到N卡。
-已关闭Secure Boot、屏蔽nouveau开源显卡驱动、成功安装NVIDIA官方驱动，执行prime-select nvidia并重启系统后，nvidia-smi依旧检测不到显卡。
-推测原因：联想YOGA笔记本独显由Windows端管家管控，在Linux环境下GPU无法正常上电枚举。
-
-# nvcc --version
-执行输出：Command 'nvcc' not found
-说明：尚未安装CUDA工具链，由于显卡无法识别，暂时无法正常使用CUDA。
 ```
+![nvidia](.assets/system/nvidia.png)
+![CUDA](.assets/system/CUDA.png)
 ## 2. Python Project A
 # Project A 摄像头+进程观察
 ## 环境创建、激活、安装依赖、运行命令
