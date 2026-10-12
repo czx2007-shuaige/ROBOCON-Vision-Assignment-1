@@ -15,20 +15,37 @@ CAP_DIR, OUT_DIR, IMG_EXT = "captures", "dataset_detect", "_color.png"
 
 
 def auto_box(g, K, D, maps):
-    """高度法优先，颜色法回退，返回 ([x1,y1,x2,y2], 方法名) 或 (None, None)"""
+    """高度法优先，颜色法回退，返回 ([x1,y1,x2,y2], 方法名) 或 (None, None)。
+
+    关键：方块半红半蓝、交处有阴影带，掩码常断成多块。
+    必须【合并所有候选轮廓取并集包围框】，否则只会框住最大的一块
+    （红面或蓝面），漏掉另一半——这正是第一版标注框偏小 2.68× 的根因。
+    """
     color, depth, meta = g
     ds = meta["depth_scale"]
     d16 = depth.astype(np.uint16)
+
+    def union_bbox(mask):
+        # 与主循环一致：先 9×9×2 膨胀桥接，再合并所有轮廓取并集框
+        md = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9)), 2)
+        cs, _ = cv2.findContours(md, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cs = [c for c in cs if cv2.contourArea(c) >= 400]
+        if not cs:
+            return None
+        x1 = min(cv2.boundingRect(c)[0] for c in cs)
+        y1 = min(cv2.boundingRect(c)[1] for c in cs)
+        x2 = max(cv2.boundingRect(c)[0] + cv2.boundingRect(c)[2] for c in cs)
+        y2 = max(cv2.boundingRect(c)[1] + cv2.boundingRect(c)[3] for c in cs)
+        return [x1, y1, x2, y2]
+
     # 1) 深度高度法
     try:
         gh = bp.height_ground_and_mask(d16, ds, K, D, maps=maps)
         if gh:
             (_, _), mask = gh
-            cs, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            cs = [c for c in cs if cv2.contourArea(c) >= 400]
-            if cs:
-                x, y, w, h = cv2.boundingRect(max(cs, key=cv2.contourArea))
-                return [x, y, x + w, y + h], "height"
+            b = union_bbox(mask)
+            if b:
+                return b, "height"
     except Exception:
         pass
     # 2) 颜色法（红∪蓝）
@@ -38,11 +55,9 @@ def auto_box(g, K, D, maps):
         m |= cv2.inRange(hsv, np.array(lo), np.array(hi))
     m = cv2.morphologyEx(m, cv2.MORPH_CLOSE,
                          cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
-    cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cs = [c for c in cs if cv2.contourArea(c) >= 400]
-    if cs:
-        x, y, w, h = cv2.boundingRect(max(cs, key=cv2.contourArea))
-        return [x, y, x + w, y + h], "color"
+    b = union_bbox(m)
+    if b:
+        return b, "color"
     return None, None
 
 
