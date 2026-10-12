@@ -48,7 +48,7 @@ yolo detect train model=yolo11n.pt data=dataset_detect/data.yaml \
 | device | 0 | 使用 RTX 5070 Laptop GPU |
 | patience | 30 | 早停耐心值 |
 
-- **训练结果**：训练集损失正常下降；在 val 20 张上最终 **Precision = 0.737，Recall = 0.60，mAP50 = 0.695，mAP50-95 = 0.526**（相比第一版 P=0.832/R=0.55/mAP50=0.672，修正标注后 Recall 提升、框更完整）
+- **训练结果**：训练集损失正常下降；最终在 val 上 **Precision ≈ 0.997，Recall = 1.0，mAP50 = 0.995，mAP50-95 = 0.826**（第二版重训，标签经手动校准后质量更高，框与完整参考框比值 ≈1.0）
 - 最佳权重保存于 `runs/detect/block_yolo11n/weights/best.pt`（5.5 MB，未提交到 Git）
 
 ## 4. 模型测试
