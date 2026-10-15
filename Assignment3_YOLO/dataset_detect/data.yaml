@@ -1,0 +1,6 @@
+path: /home/cai/vision_task1/dataset_detect
+train: images/train
+val: images/val
+test: images/test
+nc: 1
+names: ['block']
