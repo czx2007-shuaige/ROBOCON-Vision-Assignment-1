@@ -25,13 +25,14 @@ except Exception:
 
 IMG_W, IMG_H = 640, 480
 MODEL = "runs/detect/block_yolo11n/weights/best.pt"
-CONF = 0.25
+CONF = 0.15
+IMGSZ = 960      # 远距小方块在 640 下仅几十像素、轮廓糊掉会漏检；960 实测可救回
 
 
 def detect_frame(model, color):
     """对一帧彩色图推理，返回画好框的图。"""
     disp = color.copy()
-    res = model.predict(color, conf=CONF, verbose=False)[0]
+    res = model.predict(color, imgsz=IMGSZ, conf=CONF, verbose=False)[0]
     boxes = res.boxes
     if boxes is not None and len(boxes) > 0:
         xyxy = boxes.xyxy.cpu().numpy().reshape(-1, 4)
@@ -54,6 +55,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cam", type=int, default=None,
                     help="用普通 USB 相机（指定设备号，如 0）替代 RealSense")
+    ap.add_argument("--sn", default=None,
+                    help="RealSense 序列号（锁定训练用的相机 043322075459）")
     args = ap.parse_args()
 
     if not os.path.exists(MODEL):
@@ -106,13 +109,25 @@ def main():
         if not devs:
             print("❌ 未检测到 RealSense 相机")
             sys.exit(1)
-        sn = devs[0].get_info(rs.camera_info.serial_number)
+        serials = [d.get_info(rs.camera_info.serial_number) for d in devs]
+        print(f"检测到 RealSense 相机: {serials}")
+        if args.sn:
+            if args.sn not in serials:
+                print(f"❌ 指定的 SN {args.sn} 不在已连接设备 {serials}")
+                sys.exit(1)
+            sn = args.sn
+        else:
+            sn = serials[0]
+            print(f"未指定 --sn，默认用第一台 {sn}。"
+                  f"⚠ 若框不准，多半是选错相机——训练数据用的是 043322075459。")
         pipe = rs.pipeline()
         cfg = rs.config()
         cfg.enable_device(sn)
         cfg.enable_stream(rs.stream.color, IMG_W, IMG_H, rs.format.bgr8, 30)
-        pipe.start()
-        print(f"相机 SN={sn} 已启动，实时检测中。q=退出 空格=存图")
+        pipe.start(cfg)      # 必须传 cfg！否则 libRealsense 按默认 RGB8 给数据，
+                             # cv2/训练都按 BGR 解释 → 红蓝互换 + 检测域偏移
+        print(f"相机 SN={sn} 已启动，实时检测中。q=退出 空格=存图 "
+              f"(训练相机=043322075459)")
         try:
             while True:
                 cf = pipe.wait_for_frames().get_color_frame()

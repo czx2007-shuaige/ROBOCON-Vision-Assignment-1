@@ -52,6 +52,8 @@
 import os
 import sys
 import time
+import json
+import glob
 import argparse
 import collections
 import numpy as np
@@ -208,6 +210,30 @@ def infer_cube_from_cls(name):
     if "200" in s or "天空" in s or "塔顶" in s or "top" in s:
         return 0.20
     return None
+
+
+def load_offline_frame(color_path):
+    """离线模式：从 capture_blocks.py 保存的一组快照读回
+    (color_bgr, depth_raw_uint16, depth_scale, Kmat)。
+
+    文件约定（见 capture_blocks.py）：
+      <tag>_color.png   uint8 BGR 640x480（原始未去畸变）
+      <tag>_depth.npy   uint16 毫米原始深度(z16)，乘 depth_scale 得米
+      <tag>_meta.json   内参 fx/fy/ppx/ppy + depth_scale
+    采集时 color/depth 已用 rs.align(color) 对齐，像素一一对应。
+    """
+    base = color_path[:-len("_color.png")]
+    color = cv2.imread(color_path)
+    if color is None:
+        raise RuntimeError(f"无法读取 {color_path}")
+    depth_raw = np.load(base + "_depth.npy")
+    with open(base + "_meta.json") as f:
+        meta = json.load(f)
+    depth_scale = float(meta.get("depth_scale", 0.001))
+    Kmat = np.array([[meta["fx"], 0.0, meta["ppx"]],
+                     [0.0, meta["fy"], meta["ppy"]],
+                     [0.0, 0.0, 1.0]], dtype=np.float64)
+    return color, depth_raw, depth_scale, Kmat
 
 
 # 自标定内参文件（按相机序列号），用于去畸变
@@ -406,25 +432,45 @@ def main():
                     help="YOLO 分割模型 .pt 路径（--mode yolo 时使用）")
     ap.add_argument("--conf", type=float, default=0.5,
                     help="YOLO 置信度阈值（默认 0.5）")
+    ap.add_argument("--offline", default=None,
+                    help="离线模式：指定 captures 目录，读 _color.png/_depth.npy/_meta.json "
+                         "跑位姿（不连相机）。例: --offline captures")
+    ap.add_argument("--limit", type=int, default=0,
+                    help="离线模式只处理前 N 张（0=全部），便于快速验证")
     args = ap.parse_args()
 
-    # ---------- 相机 ----------
-    devs = list(rs.context().query_devices())
-    if not devs:
-        print("❌ 未检测到 RealSense 相机")
-        sys.exit(1)
-    serials = [d.get_info(rs.camera_info.serial_number) for d in devs]
-    sn = args.sn if args.sn else serials[0]
-    if sn not in serials:
-        print(f"❌ SN {sn} 不在 {serials}")
-        sys.exit(1)
-
-    pipe = rs.pipeline()
-    cfg = rs.config()
-    cfg.enable_device(sn)
-    cfg.enable_stream(rs.stream.color, IMG_W, IMG_H, rs.format.bgr8, 30)
-    cfg.enable_stream(rs.stream.depth, IMG_W, IMG_H, rs.format.z16, 30)
-    align = rs.align(rs.stream.color)
+    # ---------- 相机 / 离线 ----------
+    offline_files = []
+    pipe = cfg = align = None
+    if args.offline:
+        if not os.path.isdir(args.offline):
+            print(f"❌ 离线目录不存在: {args.offline}")
+            sys.exit(1)
+        offline_files = sorted(glob.glob(os.path.join(args.offline, "*_color.png")))
+        if not offline_files:
+            print(f"❌ 离线目录无 *_color.png: {args.offline}")
+            sys.exit(1)
+        if args.limit > 0:
+            offline_files = offline_files[:args.limit]
+        sn = args.sn if args.sn else "043322075459"
+        print(f"📂 离线模式: {args.offline}  共 {len(offline_files)} 张  "
+              f"相机 SN 用 {sn}（用于匹配标定去畸变）")
+    else:
+        devs = list(rs.context().query_devices())
+        if not devs:
+            print("❌ 未检测到 RealSense 相机")
+            sys.exit(1)
+        serials = [d.get_info(rs.camera_info.serial_number) for d in devs]
+        sn = args.sn if args.sn else serials[0]
+        if sn not in serials:
+            print(f"❌ SN {sn} 不在 {serials}")
+            sys.exit(1)
+        pipe = rs.pipeline()
+        cfg = rs.config()
+        cfg.enable_device(sn)
+        cfg.enable_stream(rs.stream.color, IMG_W, IMG_H, rs.format.bgr8, 30)
+        cfg.enable_stream(rs.stream.depth, IMG_W, IMG_H, rs.format.z16, 30)
+        align = rs.align(rs.stream.color)
 
     # ---------- YOLO 模型（仅 --mode yolo 时加载） ----------
     yolo_model = None
@@ -485,6 +531,38 @@ def main():
                       f"画面上的白圈就是这次点击实际落点；"
                       f"建议直接用 AUTO 模式(按 a)或预设 3，无需点击")
 
+    def dump_results(results, vis):
+        xs_ = np.median([r["x"] for r in results])
+        ys_ = np.median([r["y"] for r in results])
+        zs_ = np.median([r["z"] for r in results])
+        yw_ = np.median([r["yaw"] for r in results])
+        w_ = np.median([r["w"] for r in results])
+        l_ = np.median([r["l"] for r in results])
+        h_ = np.median([r["h"] for r in results])
+        sd_ = np.median([r["side"] for r in results])
+        cb_ = np.median([r["cube"] for r in results])
+        er_ = np.median([r["size_err"] for r in results])
+        kd_ = results[-1]["kind"]
+        print("\n" + "=" * 70)
+        print(f"【任务一·基础要求】方块位姿（最近 {len(results)} 帧中位数）")
+        print("=" * 70)
+        print(f"  世界坐标位置  x = {xs_:+.4f} m   y = {ys_:+.4f} m   z = {zs_:+.4f} m")
+        print(f"  yaw 角        = {yw_:+.2f} deg （绕竖直Z轴；立方体按 mod 90° 报告）")
+        print(f"  方块类型      = {kd_}")
+        print(f"  测得边长      = {sd_*1000:.1f} mm   （标准 {cb_*1000:.0f} mm，"
+              f"偏差 {er_*100:.1f}%）")
+        print(f"  包围盒(估)    = {w_:.3f} x {l_:.3f} x {h_:.3f} m")
+        print(f"  （世界系：原点=相机光心，Z=竖直向上，X=相机右方向投影到地面，单位 m）")
+        print("=" * 66 + "\n")
+        os.makedirs("results", exist_ok=True)
+        if vis is not None:
+            cv2.imwrite(f"results/task1_vis_{time.strftime('%H%M%S')}.png", vis)
+        with open("results/task1_basic.txt", "a") as f:
+            f.write(f"x={xs_:+.5f} y={ys_:+.5f} z={zs_:+.5f} yaw={yw_:+.3f} "
+                    f"kind={kd_} side={sd_*1000:.1f}mm std={cb_*1000:.0f}mm "
+                    f"err={er_*100:.1f}% bbox={w_:.3f}x{l_:.3f}x{h_:.3f}\n")
+        print("✅ 已追加保存 -> results/task1_basic.txt")
+
     # ---------- 去畸变用的标定内参 ----------
     calib_path = args.calib
     if calib_path is None:
@@ -498,38 +576,62 @@ def main():
         print("ℹ 未找到自标定文件，将不做去畸变（精度略降）")
 
     try:
-        try:
-            _prof = pipe.start(cfg)
-            started = True
-        except Exception as e:
-            print(f"❌ 打开相机失败: {e}")
-            return
-        try:
-            depth_scale = _prof.get_device().first_depth_sensor().get_depth_scale()
-        except Exception:
-            depth_scale = 0.001
-        print(f"相机 SN={sn} 已启动  模式={args.mode}")
+        depth_scale = 0.001
+        if not args.offline:
+            try:
+                _prof = pipe.start(cfg)
+                started = True
+            except Exception as e:
+                print(f"❌ 打开相机失败: {e}")
+                return
+            try:
+                depth_scale = _prof.get_device().first_depth_sensor().get_depth_scale()
+            except Exception:
+                depth_scale = 0.001
+        print(f"相机 SN={sn}  模式={args.mode}  {'(离线)' if args.offline else ''}")
         print(f"  height=深度高度法(默认,可手持)  color=HSV颜色  yolo=分割模型")
         print(f"  按键: p=输出结果  g=重估地面  d=调试  a=切AUTO颜色  q=退出")
 
-        cv2.namedWindow("block_pose")
-        # OpenCV5/Qt 后端要等首次 imshow+waitKey 后窗口句柄才真正创建，
-        # 否则循环里的 setMouseCallback 会报 "NULL window handler"
-        cv2.imshow("block_pose", np.zeros((IMG_H, IMG_W, 3), np.uint8))
-        cv2.waitKey(30)
+        no_show = False
+        try:
+            cv2.namedWindow("block_pose")
+            # OpenCV5/Qt 后端要等首次 imshow+waitKey 后窗口句柄才真正创建，
+            # 否则循环里的 setMouseCallback 会报 "NULL window handler"
+            cv2.imshow("block_pose", np.zeros((IMG_H, IMG_W, 3), np.uint8))
+            cv2.waitKey(30)
+        except Exception as e:
+            no_show = True
+            print(f"ℹ 无法创建显示窗口（{e}）→ 无界面运行，"
+                  f"每帧打印结果，最终汇总保存到 results/")
+        off_i = 0
         while True:
-            frames = align.process(pipe.wait_for_frames())
-            df = frames.get_depth_frame()
-            cf = frames.get_color_frame()
-            if not df or not cf:
-                continue
-            color = np.asanyarray(cf.get_data())
-            hsv = cv2.cvtColor(color, cv2.COLOR_BGR2HSV)
-            intr = df.profile.as_video_stream_profile().intrinsics
-            depth_raw = np.asanyarray(df.get_data())
-            Kmat = np.array([[intr.fx, 0, intr.ppx],
-                             [0, intr.fy, intr.ppy],
-                             [0, 0, 1.0]], dtype=np.float64)
+            if args.offline:
+                if off_i >= len(offline_files):
+                    print(f"\n📂 离线 {len(offline_files)} 张处理完毕，输出中位数汇总：")
+                    if results:
+                        dump_results(results, None)
+                    break
+                fp = offline_files[off_i]
+                off_i += 1
+                try:
+                    color, depth_raw, depth_scale, Kmat = load_offline_frame(fp)
+                except Exception as e:
+                    print(f"⚠ 读取失败 {os.path.basename(fp)}: {e}")
+                    continue
+                hsv = cv2.cvtColor(color, cv2.COLOR_BGR2HSV)
+            else:
+                frames = align.process(pipe.wait_for_frames())
+                df = frames.get_depth_frame()
+                cf = frames.get_color_frame()
+                if not df or not cf:
+                    continue
+                color = np.asanyarray(cf.get_data())
+                hsv = cv2.cvtColor(color, cv2.COLOR_BGR2HSV)
+                intr = df.profile.as_video_stream_profile().intrinsics
+                depth_raw = np.asanyarray(df.get_data())
+                Kmat = np.array([[intr.fx, 0, intr.ppx],
+                                 [0, intr.fy, intr.ppy],
+                                 [0, 0, 1.0]], dtype=np.float64)
             if undist_maps is None and Dvec is not None:
                 # 首帧构建一次去畸变查找表，之后每帧只查表
                 undist_maps = build_undistort_maps(Kmat, Dvec, IMG_W, IMG_H)
@@ -717,9 +819,16 @@ def main():
                             break
             if res is not None:
                 results.append(res)
+                if args.offline:
+                    _fn = os.path.basename(offline_files[off_i - 1])
+                    print(f"  [{off_i:3d}] x={res['x']:+.3f} y={res['y']:+.3f} "
+                          f"z={res['z']:+.3f} yaw={res['yaw']:+6.1f} "
+                          f"side={res['side']*1000:.0f}mm"
+                          f"(偏{res['size_err']*100:.0f}%) {_fn}")
 
             # ---------- 4. 显示 ----------
-            cv2.setMouseCallback("block_pose", on_mouse, hsv)
+            if not no_show:
+                cv2.setMouseCallback("block_pose", on_mouse, hsv)
             txt = [mode_txt]
             if res is not None:
                 txt.append(f"pos=({res['x']:+.3f},{res['y']:+.3f},{res['z']:+.3f})m")
@@ -739,9 +848,11 @@ def main():
                 # 画出点击实际落点：若白圈不在你点的位置，说明存在高分屏坐标偏移
                 cv2.circle(vis, click_marker, 6, (255, 255, 255), 1)
                 cv2.drawMarker(vis, click_marker, (255, 0, 255), cv2.MARKER_CROSS, 14, 1)
-            cv2.imshow("block_pose", vis)
-
-            key = cv2.waitKey(1) & 0xFF
+            if not no_show:
+                cv2.imshow("block_pose", vis)
+                key = cv2.waitKey(30) & 0xFF
+            else:
+                key = -1
             if key == ord('q'):
                 break
             elif key == ord('a'):
@@ -762,35 +873,7 @@ def main():
                 if not results:
                     print("⚠ 还没有有效结果")
                     continue
-                xs_ = np.median([r["x"] for r in results])
-                ys_ = np.median([r["y"] for r in results])
-                zs_ = np.median([r["z"] for r in results])
-                yw_ = np.median([r["yaw"] for r in results])
-                w_ = np.median([r["w"] for r in results])
-                l_ = np.median([r["l"] for r in results])
-                h_ = np.median([r["h"] for r in results])
-                sd_ = np.median([r["side"] for r in results])
-                cb_ = np.median([r["cube"] for r in results])
-                er_ = np.median([r["size_err"] for r in results])
-                kd_ = results[-1]["kind"]
-                print("\n" + "=" * 70)
-                print(f"【任务一·基础要求】方块位姿（最近 {len(results)} 帧中位数）")
-                print("=" * 70)
-                print(f"  世界坐标位置  x = {xs_:+.4f} m   y = {ys_:+.4f} m   z = {zs_:+.4f} m")
-                print(f"  yaw 角        = {yw_:+.2f} deg （绕竖直Z轴；立方体按 mod 90° 报告）")
-                print(f"  方块类型      = {kd_}")
-                print(f"  测得边长      = {sd_*1000:.1f} mm   （标准 {cb_*1000:.0f} mm，"
-                      f"偏差 {er_*100:.1f}%）")
-                print(f"  包围盒(估)    = {w_:.3f} x {l_:.3f} x {h_:.3f} m")
-                print(f"  （世界系：原点=相机光心，Z=竖直向上，X=相机右方向投影到地面，单位 m）")
-                print("=" * 66 + "\n")
-                os.makedirs("results", exist_ok=True)
-                cv2.imwrite(f"results/task1_vis_{time.strftime('%H%M%S')}.png", vis)
-                with open("results/task1_basic.txt", "a") as f:
-                    f.write(f"x={xs_:+.5f} y={ys_:+.5f} z={zs_:+.5f} yaw={yw_:+.3f} "
-                            f"kind={kd_} side={sd_*1000:.1f}mm std={cb_*1000:.0f}mm "
-                            f"err={er_*100:.1f}% bbox={w_:.3f}x{l_:.3f}x{h_:.3f}\n")
-                print("✅ 已追加保存 -> results/task1_basic.txt")
+                dump_results(results, vis)
     finally:
         if started:
             try:
